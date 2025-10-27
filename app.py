@@ -1,7 +1,9 @@
 # app.py
 from flask import Flask, render_template, request, jsonify
+import pandas as pd
 import requests
 import sqlite3
+from api import recommendation_identification
 import json
 
 app = Flask(__name__)
@@ -54,7 +56,7 @@ def get_anime_details(anime_id):
     try:
         # Make the request to MyAnimeList API from your server
         response = requests.get(
-            f'https://api.myanimelist.net/v2/anime/{anime_id}',
+            f'https://api.myanimelist.net/v2/anime/{anime_id}?fields=id,title,main_picture,alternative_titles,start_date,end_date,synopsis,rank,popularity,media_type,genres',
             headers={
                 'X-MAL-CLIENT-ID': 'e863fdfe943adee262553933a60982f8'
             }
@@ -63,6 +65,15 @@ def get_anime_details(anime_id):
         return jsonify(response.json())
     except requests.RequestException as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/create_user_recommendations', methods=['POST'])
+def recommendation_get():
+    data = request.get_json()
+    anime_id = int(data.get('anime_id'))
+    print("Received anime_id:", anime_id)
+
+    result = recommendation_identification(anime_id)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)
